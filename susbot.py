@@ -133,10 +133,10 @@ class Sus_Bot(): #---------Sus_Bot main class-----------
         keyboard.add_hotkey('shift+x', lambda: self.toggle_logos()) #toggle guild war logos on/off
         keyboard.add_hotkey("shift+'", lambda: self.rectangle_scatter('not alt')) #paint on equipped colors in zone
         keyboard.add_hotkey("shift+;", lambda: self.rectangle_scatter('alt')) #paint 'not' on equipped colors in zone
-        keyboard.add_hotkey("shift+r", lambda: self.lgbt()) #paint on equipped colors in zone
-        keyboard.add_hotkey("shift+q", lambda: self.tv_screen('on')) #paint on equipped colors in zone
+        keyboard.add_hotkey("shift+r", lambda: self.lgbt()) #rng flags in zone
+        keyboard.add_hotkey("shift+q", lambda: self.tv_screen('on')) #tv in zone
         keyboard.add_hotkey("shift+e", lambda: self.amogus()) #sus
-        keyboard.add_hotkey("shift+z", lambda: self.tree()) #sus
+        keyboard.add_hotkey("shift+z", lambda: self.tree()) #save the planet
         print('Hotkeys on.')
         
     def tree(self):

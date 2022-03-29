@@ -29,7 +29,6 @@ board = 7 #map number
 slow_speed = 0.04 #seconds
 default_speed = 0.02 #seconds
 max_speed = 0.016  #seconds (be careful faster than this -seriously- you can get autobanned for going too fast)
-auto_save = 30 #seconds
 
 paintz = ( #here is our list of pixel place colors
         (255,255,255), #the order of them also is the order

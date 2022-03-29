@@ -1,0 +1,6 @@
+request
+keyboard
+python-socketio==4.6.1
+Pillow
+numpy
+selenium

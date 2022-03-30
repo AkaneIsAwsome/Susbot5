@@ -22,7 +22,9 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-driver = webdriver.Chrome()
+#driver = webdriver.Firefox() #either use Firefox or Chrome (comment the other out) *Firefox requires geckodriver.exe
+driver = webdriver.Chrome() #either use Firefox or Chrome (comment the other out) *chrome requires Chromedriver.exe
+
 sio = socketio.Client()
 
 #OPTIONS:
@@ -100,8 +102,6 @@ class Sus_Bot(): #---------Sus_Bot main class-----------
         self.txty, self.bxby = None, None #and these equal None... for now...
         self.x, self.y = 0, 0 #I think you get the picture now.
         self.colorfilter = [None, None, None, None, None, None, None, None, None]
-        self.user = 0000000
-        self.counter = False
         self.logos = True
         self.get_7()#map
         self.manualmsg = False
@@ -122,7 +122,6 @@ class Sus_Bot(): #---------Sus_Bot main class-----------
         keyboard.add_hotkey('shift+c', lambda: self.copy_img()) #copy zone
         keyboard.add_hotkey('shift+v', lambda: self.paste_img('center')) #paste zone
         keyboard.add_hotkey('shift+b', lambda: self.paste_img('corner')) #paste zone
-        keyboard.add_hotkey('delete', lambda: self.counter_player()) #bad boy
         keyboard.add_hotkey('shift+x', lambda: self.toggle_logos()) #toggle guild war logos on/off
         keyboard.add_hotkey("shift+'", lambda: self.rectangle_scatter('not alt')) #paint on equipped colors in zone
         keyboard.add_hotkey("shift+;", lambda: self.rectangle_scatter('alt')) #paint 'not' on equipped colors in zone
@@ -130,59 +129,22 @@ class Sus_Bot(): #---------Sus_Bot main class-----------
         keyboard.add_hotkey("shift+q", lambda: self.tv_screen('on')) #paint on equipped colors in zone
         keyboard.add_hotkey("shift+e", lambda: self.amogus()) #sus
         keyboard.add_hotkey("shift+z", lambda: self.tree()) #sus
-        keyboard.add_hotkey("f9", lambda: self.manualF9())
         print('Hotkeys on.')
         
-    def connection(self):
-        if self.ate_cookies == True:
+    def connection(self): #maintain socket connection and update pixel cache
             sio.connect('https://pixelplace.io', transports=['websocket'])
-            #lets connect to pixelplace:
+
             @sio.event
-            def connect():
+            def connect(): #"Hello there."
                 sio.emit("init",{"authKey":f"{self.authkey}","authToken":f"{self.authtoken}","authId":f"{self.authid}","boardId":board})
                 threading.Timer(15, connect).start()
-            #now let's wait for incoming pixels and update them to the live cache:
-            @sio.on("p")
-            def update_pixels(p: tuple):
-                for i in p:
-                    if self.counter == True and i[4] == self.user:
-                        sio.emit("p",[i[0],i[1],paintz.index(self.cache[i[0],i[1]]),1])
-                    self.cache[i[0], i[1]] = paintz[i[2]]                
-            #ground-breaking stuff really
-        if self.ate_cookies == False:
-            if self.manualmsg == False:
-                self.manual()
-                self.manualmsg = True
-                
-    def get_userdata(self):#users.json
-        with open('users.json', 'r') as j:
-            self.contents  = dict(json.loads(j.read()))        
-            for u in range(10):
-                try:
-                    userdata = driver.find_element(By.XPATH,f'/html/body/div[3]/div[1]/div[2]/div/div[{u}]')
-                    if userdata.get_attribute("data-profile") != None:
-                        self.contents.update({userdata.get_attribute("data-profile"):userdata.get_attribute("data-id")})
-                except:
-                    pass
-        with open('users.json', 'w') as j:
-            json.dump(self.contents, j)
-
-    def counter_player(self):
-        if self.counter == False:
-            try:
-                self.username = driver.find_element(By.XPATH,'/html/body/div[7]/div/div/div[2]/div[1]/span').text.replace('• ',"")
-                self.get_userdata()
-                self.user = int(self.contents.get(self.username.lower()))
-                self.counter = True
-                print(f'Countering: {self.username}')
-            except: 
-                print('error')
-                pass
-        else:
-            self.counter = False
-            print(f'No longer countering {self.username}.')
             
-    def tree(self):
+            @sio.on("p")
+            def update_pixels(p: tuple): #To the cache cave!
+                for i in p:
+                    self.cache[i[0], i[1]] = paintz[i[2]]
+            
+    def tree(self): #this will draw a randomly colored tree
         try:
             self.get_coordinate()
             x, y = self.x, self.y       
@@ -293,7 +255,7 @@ class Sus_Bot(): #---------Sus_Bot main class-----------
         except:
             pass
 
-    def rectangle_scatter(self, alt):
+    def rectangle_scatter(self, alt): #two different modes, paints on filter colors or paints non-filter colors
         try:
             self.getcurcolor()
             self.work_order=()    
@@ -324,7 +286,7 @@ class Sus_Bot(): #---------Sus_Bot main class-----------
         except:
             pass
 
-    def lgbt(self):
+    def lgbt(self): #draws rng striped flags in zone
         try:
             while True:
                 a,b = random.randint(self.txty[0], self.bxby[0]), random.randint(self.txty[1]-10, self.bxby[1]-7)
@@ -350,7 +312,7 @@ class Sus_Bot(): #---------Sus_Bot main class-----------
         except:
             pass
     
-    def restore_area(self):
+    def restore_area(self): #restores an area, change 7place.png to a custom image as the same size, same color data as the map you are playing on
         try:
             self.work_order=()
             #map you want to use to restore to:        
@@ -436,7 +398,7 @@ class Sus_Bot(): #---------Sus_Bot main class-----------
         elif event.name == '0':
             self.removefilters()
             
-    def getcurcolor(self):
+    def getcurcolor(self): #gets the currently equipped color as a tuple
         try:
             self.visibility_state()
             a = self.curcol.find('(')
@@ -446,7 +408,7 @@ class Sus_Bot(): #---------Sus_Bot main class-----------
         except:
             pass
         
-    def getcurcolorhotkey(self, col):
+    def getcurcolorhotkey(self, col): #equips color to 1-9 slots
         try:
             self.visibility_state()
             a = self.curcol.find('(')
@@ -460,12 +422,12 @@ class Sus_Bot(): #---------Sus_Bot main class-----------
         except:
             pass
     
-    def removefilters(self):
+    def removefilters(self): #removes equipped colors on the 1-9 slots
         self.colorfilter[0:] = None, None, None, None, None, None, None, None, None
         print("Filters dequipped.")
         time.sleep(1)
         
-    def visibility_state(self):
+    def visibility_state(self): #ensures the current tab is correctly loaded for xpath css code stuff
         try:
             vis = driver.execute_script("return document.visibilityState") == "visible"
         except:
@@ -504,14 +466,15 @@ class Sus_Bot(): #---------Sus_Bot main class-----------
         self.image = PIL.Image.open(f'{board}.png').convert('RGB')
         self.cache = self.image.load() #individual pixels with = self.cache[x, y]
         
-    def manual(self):
+    def manual(self): #manual login stuff
         driver.get(f"https://pixelplace.io/{board}")
         print("After you login in manually, press F9.")
 
-    def manualF9(self):
+    def manualF9(self): #manual login stuff
         self.visibility_state()
         self.auth_data()
         self.ate_cookies = True
+        keyboard.remove_hotkey('f9')
         self.connection()        
         
     def login(self): #logins to pixelplace through reddit

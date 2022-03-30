@@ -25,11 +25,16 @@ from selenium.webdriver.support import expected_conditions as EC
 driver = webdriver.Chrome()
 sio = socketio.Client()
 
+#OPTIONS:
+reddit = "yes" #yes/no... no = you must manually login to pixelplace and then press F9 to connect
 board = 7 #map number
+
+#BOT SPEED SETTINGS:
 slow_speed = 0.04 #seconds
 default_speed = 0.02 #seconds
 max_speed = 0.016  #seconds (be careful faster than this -seriously- you can get autobanned for going too fast)
 
+#PAINT RGB VALUES
 paintz = ( #here is our list of pixel place colors
         (255,255,255), #the order of them also is the order
         (196,196,196), #of them on pixelplace which makes
@@ -95,34 +100,21 @@ class Sus_Bot(): #---------Sus_Bot main class-----------
         self.txty, self.bxby = None, None #and these equal None... for now...
         self.x, self.y = 0, 0 #I think you get the picture now.
         self.colorfilter = [None, None, None, None, None, None, None, None, None]
-        self.logos = True #this one is True, for now...
-        self.login()#login
-        self.get_7()#map        
-        self.auth_data()#cookies
-        self.visibility_state() #this checks the current tab you are on, and correctly sets the xpath stuff
+        self.user = 0000000
+        self.counter = False
+        self.logos = True
+        self.get_7()#map
+        self.manualmsg = False
+        self.ate_cookies = False
+        if reddit == "yes":
+            self.login()#login       
+            self.auth_data()#cookies                
+            self.visibility_state() #this checks the current tab you are on, and correctly sets the xpath stuff
         self.hotkeys()#activate keybinds
-        sio.connect('https://pixelplace.io', transports=['websocket'])
-
-        #lets connect to pixelplace:
-        @sio.event
-        def connect(): 
-            sio.emit("init",{"authKey":f"{self.authkey}","authToken":f"{self.authtoken}","authId":f"{self.authid}","boardId":board})
-            threading.Timer(15, connect).start()
-
-        #now let's wait for incoming pixels and update them to the live cache:
-        @sio.on("p")
-        def update_pixels(p: tuple):
-            for i in p:
-                try:
-                    self.cache[i[0], i[1]] = paintz[i[2]]
-                except:
-                    pass
-        #ground-breaking stuff really
+        self.connection()
             
     #hotkey binds:
     def hotkeys(self):
-        keyboard.unhook_all()
-        time.sleep(.25)
         keyboard.on_press(self.onkeypress)#1-9 buttons equip currently selected colors
         keyboard.add_hotkey('shift+y', lambda: self.zone('top left')) #mark top left corner of zone to bot
         keyboard.add_hotkey('shift+u', lambda: self.zone('bottom right')) #mark bottom right corner of zone to bot
@@ -130,15 +122,66 @@ class Sus_Bot(): #---------Sus_Bot main class-----------
         keyboard.add_hotkey('shift+c', lambda: self.copy_img()) #copy zone
         keyboard.add_hotkey('shift+v', lambda: self.paste_img('center')) #paste zone
         keyboard.add_hotkey('shift+b', lambda: self.paste_img('corner')) #paste zone
+        keyboard.add_hotkey('delete', lambda: self.counter_player()) #bad boy
         keyboard.add_hotkey('shift+x', lambda: self.toggle_logos()) #toggle guild war logos on/off
         keyboard.add_hotkey("shift+'", lambda: self.rectangle_scatter('not alt')) #paint on equipped colors in zone
         keyboard.add_hotkey("shift+;", lambda: self.rectangle_scatter('alt')) #paint 'not' on equipped colors in zone
-        keyboard.add_hotkey("shift+r", lambda: self.lgbt()) #rng flags in zone
-        keyboard.add_hotkey("shift+q", lambda: self.tv_screen('on')) #tv in zone
+        keyboard.add_hotkey("shift+r", lambda: self.lgbt()) #paint on equipped colors in zone
+        keyboard.add_hotkey("shift+q", lambda: self.tv_screen('on')) #paint on equipped colors in zone
         keyboard.add_hotkey("shift+e", lambda: self.amogus()) #sus
-        keyboard.add_hotkey("shift+z", lambda: self.tree()) #save the planet
+        keyboard.add_hotkey("shift+z", lambda: self.tree()) #sus
+        keyboard.add_hotkey("f9", lambda: self.manualF9())
         print('Hotkeys on.')
         
+    def connection(self):
+        if self.ate_cookies == True:
+            sio.connect('https://pixelplace.io', transports=['websocket'])
+            #lets connect to pixelplace:
+            @sio.event
+            def connect():
+                sio.emit("init",{"authKey":f"{self.authkey}","authToken":f"{self.authtoken}","authId":f"{self.authid}","boardId":board})
+                threading.Timer(15, connect).start()
+            #now let's wait for incoming pixels and update them to the live cache:
+            @sio.on("p")
+            def update_pixels(p: tuple):
+                for i in p:
+                    if self.counter == True and i[4] == self.user:
+                        sio.emit("p",[i[0],i[1],paintz.index(self.cache[i[0],i[1]]),1])
+                    self.cache[i[0], i[1]] = paintz[i[2]]                
+            #ground-breaking stuff really
+        if self.ate_cookies == False:
+            if self.manualmsg == False:
+                self.manual()
+                self.manualmsg = True
+                
+    def get_userdata(self):#users.json
+        with open('users.json', 'r') as j:
+            self.contents  = dict(json.loads(j.read()))        
+            for u in range(10):
+                try:
+                    userdata = driver.find_element(By.XPATH,f'/html/body/div[3]/div[1]/div[2]/div/div[{u}]')
+                    if userdata.get_attribute("data-profile") != None:
+                        self.contents.update({userdata.get_attribute("data-profile"):userdata.get_attribute("data-id")})
+                except:
+                    pass
+        with open('users.json', 'w') as j:
+            json.dump(self.contents, j)
+
+    def counter_player(self):
+        if self.counter == False:
+            try:
+                self.username = driver.find_element(By.XPATH,'/html/body/div[7]/div/div/div[2]/div[1]/span').text.replace('• ',"")
+                self.get_userdata()
+                self.user = int(self.contents.get(self.username.lower()))
+                self.counter = True
+                print(f'Countering: {self.username}')
+            except: 
+                print('error')
+                pass
+        else:
+            self.counter = False
+            print(f'No longer countering {self.username}.')
+            
     def tree(self):
         try:
             self.get_coordinate()
@@ -461,6 +504,16 @@ class Sus_Bot(): #---------Sus_Bot main class-----------
         self.image = PIL.Image.open(f'{board}.png').convert('RGB')
         self.cache = self.image.load() #individual pixels with = self.cache[x, y]
         
+    def manual(self):
+        driver.get(f"https://pixelplace.io/{board}")
+        print("After you login in manually, press F9.")
+
+    def manualF9(self):
+        self.visibility_state()
+        self.auth_data()
+        self.ate_cookies = True
+        self.connection()        
+        
     def login(self): #logins to pixelplace through reddit
         driver.get("https://pixelplace.io/api/sso.php?type=2&action=login")
         driver.find_element(By.ID,'loginUsername').send_keys(crewmate.username)
@@ -483,5 +536,6 @@ class Sus_Bot(): #---------Sus_Bot main class-----------
         self.authtoken = driver.get_cookie("authToken").get('value')
         self.authid = driver.get_cookie("authId").get('value')
         print('got cookies! yum!')
+        self.ate_cookies = True
     
 goto = Sus_Bot(crewmate.username, crewmate.password) #start an instance of the Sus_Bot class as 'goto'

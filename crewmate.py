@@ -1,3 +1,3 @@
 username = 'username here'
 password = 'password here'
-#susbot doesnt work without reddit account, sorry :(
+#susbot works without a reddit account as well, see readme for details

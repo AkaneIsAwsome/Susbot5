@@ -21,6 +21,20 @@ newest version, now in socket flavour
  
  change your name/pass in crewmate.py
  
- Then you simply double click crewmate.py
+ Then you simply double click susbot.py
  
+ If you don't want to use auto login,
  
+ Then you should edit susbot.py
+ 
+ and change the line that says
+ 
+ reddit = "yes" to a "no"
+ 
+ After that, save and run susbot.py
+ 
+ You need to login manually each time you run the bot
+ 
+ After you login manually, press F9 to connect the bot.
+ 
+# Discord: WarSaint#1320 if you have any issues and need help.

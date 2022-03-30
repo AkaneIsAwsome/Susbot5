@@ -1,6 +1,9 @@
 # Susbot5
 newest version, now in socket flavour
 
+# Requirements:
+I use Windows 10, and Python 3.7.9 and the latest version of Google Chrome, if you have all 3 of thoses, there is a high chance you can run this bot.
+
 # Installation:
 
  Download this entire folder that contains Susbot5
